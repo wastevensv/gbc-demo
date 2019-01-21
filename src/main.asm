@@ -57,7 +57,7 @@ main:
     ld [rOBP0], a
 
 ; Setup Pallette
-    ld de, PalA
+    ld hl, PalA
     ld a, $00
     call loadPal
 

@@ -4,25 +4,22 @@ INCLUDE "engine.inc"
 
 SECTION "engine",ROM0
 loadPal::
-;; Input: DE - Source Address of palette colors
+;; Input: HL - Source Address of palette colors
 ;;        A  - Destination palette index
     push af
     push bc
-    push de
+    push hl
     set 7, a
     ld [rBCPS], a
 
     ld b, 8
 .palLoop
-    ld a, [de]
-    inc de
+    ld a, [hli]
     ld [rBCPD], a
     dec b
-    ld a, b
-    and a
     jr nz, .palLoop
 
-    pop de
+    pop hl
     pop bc
     pop af
     ret
