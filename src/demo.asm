@@ -1,5 +1,6 @@
 ;; -*- mode: rgbds; -*-
 INCLUDE "hardware.inc"
+INCLUDE "engine.inc"
 
 ; rst vectors go unused
 SECTION "rst00",ROM0[0]
@@ -38,17 +39,18 @@ SECTION "bank0",ROM0[$61]
 
 SECTION "romheader",ROM0[$100]
     nop
-    jp Start
+    jp _start
 
 SECTION "start",ROM0[$150]
 
-Start:
+_start:
     nop
     di
     ld sp, $fffe
-    ld a, $42
+    jp main
 
-init:
+SECTION "text",ROM0
+main:
 ; Reset pallete
     ld a, %11100100
     ld [rBGP], a
@@ -56,28 +58,28 @@ init:
 
 ; Setup Pallette
     ld a, %10000000
-    ld [$ff68], a
+    ld [rBCPS], a
 
     ld bc, %0111111111111111  ; white
     ld a, c
-    ld [$ff69], a
+    ld [rBCPD], a
     ld a, b
-    ld [$ff69], a
-    ld bc, %0000001111100000  ; green
+    ld [rBCPD], a
+    ld bc, %0000000111100000  ; green
     ld a, c
-    ld [$ff69], a
+    ld [rBCPD], a
     ld a, b
-    ld [$ff69], a
-    ld bc, %0000000000011111  ; red
+    ld [rBCPD], a
+    ld bc, %0000000000001111  ; red
     ld a, c
-    ld [$ff69], a
+    ld [rBCPD], a
     ld a, b
-    ld [$ff69], a
-    ld bc, %0111110000000000  ; blue
+    ld [rBCPD], a
+    ld bc, %0011110000000000  ; blue
     ld a, c
-    ld [$ff69], a
+    ld [rBCPD], a
     ld a, b
-    ld [$ff69], a
+    ld [rBCPD], a
 
 ; Reset scrolling
     ld a, 0
@@ -88,35 +90,50 @@ init:
     ld [rNR52], a
 
 ; Wait till the LCD is past VBlank
-.waitVBlank:
-    ld a, [rLY]
-    cp SCRN_Y
-    jr c, .waitVBlank
+    wait_vblank
 
-    ld hl, _VRAM
+    ld hl, _VRAM	; Font goes at start of VRAM
     ld de, FontTiles
     ld bc, FontTilesEnd - FontTiles
 .copyFont
     ld a, [de]    ; Grab 1 byte from the source
     ld [hli], a   ; Place it at the destination, incrementing hl
-    inc de    	  ; Move to next byte
-    dec bc 	  ; Decrement count
-    ld a, b  	  ; Check if count is 0, since `dec bc` doesn't update flags
+    inc de	  ; Move to next byte
+    dec bc	  ; Decrement count
+    ld a, b	  ; Check if count is 0, since `dec bc` doesn't update flags
     or c
     jr nz, .copyFont
 
-    ld hl, _SCRN0+1 ; This will print the string at the top-left corner of the screen
+    ld hl, _SCRN0+$21 ; This will print the string at the top-left corner of the screen
     ld de, HelloWorldStr
 .copyString
+; Stall till A pressed
+    ld a, %00010000
+    ld [rP1], a
+.aPress
+    ld a, [rP1]
+    stall_cyc 15
+    bit 0, a
+    jp z, .aPress
+
+; Stall till A released
+.aRelease
+    ld a, [rP1]
+    stall_cyc 15
+    bit 0, a
+    jp nz, .aRelease
+
+; Print Character
     ld a, [de]
     ld [hli], a
     inc de
+
     and a              ; Check if the byte we just copied is zero
     jr nz, .copyString ; Continue if it's not
 
     halt
 
-SECTION "font", ROM0
+SECTION "tiles", ROM0
 FontTiles:
 INCBIN "font.chr"
 FontTilesEnd:
