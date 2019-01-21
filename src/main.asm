@@ -57,29 +57,9 @@ main:
     ld [rOBP0], a
 
 ; Setup Pallette
-    ld a, %10000000
-    ld [rBCPS], a
-
-    ld bc, %0111111111111111  ; white
-    ld a, c
-    ld [rBCPD], a
-    ld a, b
-    ld [rBCPD], a
-    ld bc, %0000000111100000  ; green
-    ld a, c
-    ld [rBCPD], a
-    ld a, b
-    ld [rBCPD], a
-    ld bc, %0000000000001111  ; red
-    ld a, c
-    ld [rBCPD], a
-    ld a, b
-    ld [rBCPD], a
-    ld bc, %0011110000000000  ; blue
-    ld a, c
-    ld [rBCPD], a
-    ld a, b
-    ld [rBCPD], a
+    ld de, PalA
+    ld a, $00
+    call loadPal
 
 ; Reset scrolling
     ld a, 0
@@ -139,6 +119,10 @@ INCBIN "font.chr"
 FontTilesEnd:
 
 SECTION "strings", ROM0
-
 HelloWorldStr:
     db "Hello World!", 0
+
+SECTION "palette",ROM0
+PalA:
+    dw %0111111111111111, %0000000111100000, \
+       %0000000000001111, %0011110000000000  ; WGBR
