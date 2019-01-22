@@ -23,3 +23,27 @@ loadPal::
     pop bc
     pop af
     ret
+
+memcpy::
+;; Input: HL - Source address
+;;        DE - Destination address
+;;        BC - Length
+    push af
+    push bc
+    push de
+    push hl
+
+.memcpyLoop
+    ld a, [de]    ; Grab 1 byte from the source
+    ld [hli], a   ; Place it at the destination, incrementing hl
+    inc de	  ; Move to next byte
+    dec bc	  ; Decrement count
+    ld a, b	  ; Check if count is 0, since `dec bc` doesn't update flags
+    or c
+    jr nz, .memcpyLoop
+
+    pop hl
+    pop de
+    pop bc
+    pop af
+    ret

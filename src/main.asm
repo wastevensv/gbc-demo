@@ -74,17 +74,11 @@ main:
 
     ld hl, _VRAM	; Font goes at start of VRAM
     ld de, FontTiles
-    ld bc, FontTilesEnd - FontTiles
-.copyFont
-    ld a, [de]    ; Grab 1 byte from the source
-    ld [hli], a   ; Place it at the destination, incrementing hl
-    inc de	  ; Move to next byte
-    dec bc	  ; Decrement count
-    ld a, b	  ; Check if count is 0, since `dec bc` doesn't update flags
-    or c
-    jr nz, .copyFont
+    ld bc, TestTilesEnd - FontTiles
+    call memcpy
 
-    ld hl, _SCRN0+$21 ; This will print the string at the top-left corner of the screen
+; This will print the string at the top-left corner of the screen
+    ld hl, _SCRN0+$21
     ld de, HelloWorldStr
 .copyString
 ; Stall till A pressed
@@ -114,15 +108,21 @@ main:
     halt
 
 SECTION "tiles", ROM0
+TileStart:
 FontTiles:
-INCBIN "font.chr"
+INCBIN "font.bin"
 FontTilesEnd:
+
+TEST_TILE EQU (FontTilesEnd - FontTiles) >> 4
+TestTiles:
+INCBIN "tile.bin"
+TestTilesEnd:
 
 SECTION "strings", ROM0
 HelloWorldStr:
-    db "Hello World!", 0
+    db "Hello World!", TEST_TILE, 0
 
 SECTION "palette",ROM0
 PalA:
-    dw %0111111111111111, %0000000111100000, \
-       %0000000000001111, %0011110000000000  ; WGBR
+    dw %0111111111111111, %0000001111100000, \
+       %0000000000011111, %0111110000000000  ; WGBR
