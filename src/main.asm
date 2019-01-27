@@ -2,7 +2,7 @@
 INCLUDE "hardware.inc"
 INCLUDE "engine.inc"
 
-; rst vectors go unused
+; rst vectors are currently unused
 SECTION "rst00",ROM0[0]
     ret
 
@@ -35,8 +35,6 @@ SECTION "serial",ROM0[$58]
 SECTION "joypad",ROM0[$60]
     reti
 
-SECTION "bank0",ROM0[$61]
-
 SECTION "romheader",ROM0[$100]
     nop
     jp _start
@@ -47,19 +45,21 @@ _start:
     nop
     di
     ld sp, $fffe
-    jp main
 
-SECTION "text",ROM0
-main:
 ; Reset pallete
     ld a, %11100100
     ld [rBGP], a
     ld [rOBP0], a
 
 ; Setup Pallette
-    ld hl, PalA
+    ld hl, BGPal
     ld a, $00
-    call loadPal
+    call loadBGPal
+
+; Setup Pallette
+    ld hl, CoinPal
+    ld a, $00
+    call loadOBJPal
 
 ; Reset scrolling
     ld a, 0
@@ -73,56 +73,69 @@ main:
     wait_vblank
 
     ld hl, _VRAM	; Font goes at start of VRAM
-    ld de, FontTiles
-    ld bc, TestTilesEnd - FontTiles
+    ld de, TileStart
+    ld bc, TileEnd - TileStart
     call memcpy
 
+   ld hl, _VRAM+$1000   ; Coin sprite goes at $8800
+   ld de, SpriteStart
+   ld bc, SpriteEnd - SpriteStart
+   call memcpy
+
+   ld a,$02
+   ld [rROMB0],a       ; Switch to Bank 2
+   jp main
+
+
+SECTION "main",ROMX,BANK[2]
+main:
 ; This will print the string at the top-left corner of the screen
     ld hl, _SCRN0+$21
     ld de, HelloWorldStr
 .copyString
-; Stall till A pressed
-    ld a, %00010000
-    ld [rP1], a
-.aPress
-    ld a, [rP1]
-    stall_cyc 15
-    bit 0, a
-    jp z, .aPress
-
-; Stall till A released
-.aRelease
-    ld a, [rP1]
-    stall_cyc 15
-    bit 0, a
-    jp nz, .aRelease
-
+    stall_key PADB_A
 ; Print Character
     ld a, [de]
     ld [hli], a
     inc de
 
-    and a              ; Check if the byte we just copied is zero
-    jr nz, .copyString ; Continue if it's not
+    and a              ; Check for null terminator
+    jr nz, .copyString ; Continue if a is not 0
 
     halt
 
-SECTION "tiles", ROM0
+SECTION "tiles", ROMX,BANK[1]
 TileStart:
+
 FontTiles:
 INCBIN "font.bin"
 FontTilesEnd:
 
-TEST_TILE EQU (FontTilesEnd - FontTiles) >> 4
-TestTiles:
+TestTile:
 INCBIN "tile.bin"
-TestTilesEnd:
+TestTileEnd:
+TEST_TILE EQU (TestTile - TileStart) >> 4
 
-SECTION "strings", ROM0
-HelloWorldStr:
-    db "Hello World!", TEST_TILE, 0
+TileEnd:
 
-SECTION "palette",ROM0
-PalA:
+SpriteStart:
+
+CoinSprite:
+INCBIN "coin.bin"
+CoinSpriteEnd:
+COIN_SPRITE EQU ((CoinSprite - SpriteStart) >> 4) + $80
+
+SpriteEnd:
+
+SECTION "palette",ROMX,BANK[1]
+BGPal:
     dw %0111111111111111, %0000001111100000, \
        %0000000000011111, %0111110000000000  ; WGBR
+
+CoinPal:
+    dw %0111111111111111, %0101111110111110, \
+       %0011011111011111, %0010101011111111
+
+SECTION "strings", ROMX,BANK[2]
+HelloWorldStr:
+    db "Hello World!", TEST_TILE, 0

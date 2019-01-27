@@ -348,14 +348,14 @@ rBCPD EQU $FF69
 
 
 ; --
-; -- BCPS ($FF6A)
+; -- OCPS ($FF6A)
 ; -- Object Color Palette Specification (R/W)
 ; --
 rOCPS EQU $FF6A
 
 
 ; --
-; -- BCPD ($FF6B)
+; -- OCPD ($FF6B)
 ; -- Object Color Palette Data (R/W)
 ; --
 rOCPD EQU $FF6B
@@ -709,19 +709,19 @@ CART_RAM_DISABLE EQU $00
 ;*
 ;***************************************************************************
 
-PADF_DOWN   EQU $80
-PADF_UP     EQU $40
-PADF_LEFT   EQU $20
-PADF_RIGHT  EQU $10
-PADF_START  EQU $08
-PADF_SELECT EQU $04
-PADF_B      EQU $02
-PADF_A      EQU $01
+PADF_DOWN   EQU $8
+PADF_UP     EQU $4
+PADF_LEFT   EQU $2
+PADF_RIGHT  EQU $1
+PADF_START  EQU $8
+PADF_SELECT EQU $4
+PADF_B      EQU $2
+PADF_A      EQU $1
 
-PADB_DOWN   EQU $7
-PADB_UP     EQU $6
-PADB_LEFT   EQU $5
-PADB_RIGHT  EQU $4
+PADB_DOWN   EQU $3
+PADB_UP     EQU $2
+PADB_LEFT   EQU $1
+PADB_RIGHT  EQU $0
 PADB_START  EQU $3
 PADB_SELECT EQU $2
 PADB_B      EQU $1

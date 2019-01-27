@@ -3,7 +3,7 @@ INCLUDE "hardware.inc"
 INCLUDE "engine.inc"
 
 SECTION "engine",ROM0
-loadPal::
+loadBGPal::
 ;; Input: HL - Source Address of palette colors
 ;;        A  - Destination palette index
     push af
@@ -24,9 +24,30 @@ loadPal::
     pop af
     ret
 
+loadOBJPal::
+;; Input: HL - Source Address of palette colors
+;;        A  - Destination palette index
+    push af
+    push bc
+    push hl
+    set 7, a
+    ld [rOCPS], a
+
+    ld b, 8
+.palLoop
+    ld a, [hli]
+    ld [rOCPD], a
+    dec b
+    jr nz, .palLoop
+
+    pop hl
+    pop bc
+    pop af
+    ret
+
 memcpy::
-;; Input: HL - Source address
-;;        DE - Destination address
+;; Input: DE - Source address
+;;        HL - Destination address
 ;;        BC - Length
     push af
     push bc
