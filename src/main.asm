@@ -46,6 +46,11 @@ _start:
     di
     ld sp, $fffe
 
+; Disable LCD during VRAM  writes.
+    ld a, [rLCDC]
+    res 7, a
+    ld [rLCDC], a
+
 ; Reset pallete
     ld a, %11100100
     ld [rBGP], a
@@ -69,22 +74,19 @@ _start:
 ; Turn off sound
     ld [rNR52], a
 
-; Wait till the LCD is past VBlank
-    wait_vblank
-
-    ld hl, _VRAM	; Font goes at start of VRAM
-    ld de, TileStart
+    ld hl, TileStart
+    ld de, _VRAM+$200  ; Font goes at start of VRAM
     ld bc, TileEnd - TileStart
     call memcpy
 
-   ld hl, _VRAM+$1000   ; Coin sprite goes at $8800
-   ld de, SpriteStart
-   ld bc, SpriteEnd - SpriteStart
-   call memcpy
+    ld a, [rLCDC]
+    set 7, a
+    ld [rLCDC], a
+; Reenable LCD after VRAM writes.
 
-   ld a,$02
-   ld [rROMB0],a       ; Switch to Bank 2
-   jp main
+    ld a,$02
+    ld [rROMB0],a       ; Switch to Bank 2
+    jp main
 
 
 SECTION "main",ROMX,BANK[2]
@@ -94,6 +96,7 @@ main:
     ld de, HelloWorldStr
 .copyString
     stall_key PADB_A
+    wait_vblank
 ; Print Character
     ld a, [de]
     ld [hli], a
@@ -102,6 +105,14 @@ main:
     and a              ; Check for null terminator
     jr nz, .copyString ; Continue if a is not 0
 
+    ld a, $10
+    ld [_OAMRAM+0], a
+    ld [_OAMRAM+1], a
+    ld a, $81
+    ld [_OAMRAM+2], a
+
+    wait_vblank
+
     halt
 
 SECTION "tiles", ROMX,BANK[1]
@@ -109,28 +120,26 @@ TileStart:
 
 FontTiles:
 INCBIN "font.bin"
-FontTilesEnd:
+FontTilesEnd: ; 0x20-0x7F
 
 TestTile:
 INCBIN "tile.bin"
-TestTileEnd:
-TEST_TILE EQU (TestTile - TileStart) >> 4
-
-TileEnd:
-
-SpriteStart:
+TestTileEnd: ; 0x80
 
 CoinSprite:
 INCBIN "coin.bin"
-CoinSpriteEnd:
-COIN_SPRITE EQU ((CoinSprite - SpriteStart) >> 4) + $80
+CoinSpriteEnd: ; 0x81
 
-SpriteEnd:
+TileEnd:
 
 SECTION "palette",ROMX,BANK[1]
 BGPal:
     dw %0111111111111111, %0000001111100000, \
-       %0000000000011111, %0111110000000000  ; WGBR
+       %0000000000011111, %0111110000000000
+
+BGPalAlt:
+    dw %0000000000011111, %0000001111100000, \
+       %0111111111111111, %0111110000000000
 
 CoinPal:
     dw %0111111111111111, %0101111110111110, \
@@ -138,4 +147,4 @@ CoinPal:
 
 SECTION "strings", ROMX,BANK[2]
 HelloWorldStr:
-    db "Hello World!", TEST_TILE, 0
+    db "Hello World!", $80, 0

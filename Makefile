@@ -8,7 +8,7 @@ all: build/$(TARGET).gbc
 
 build/%.o: src/%.asm
 	mkdir -p build/
-	rgbasm -i src/ -i data/ -p 0xff -o $@ $^
+	rgbasm -i src/ -i data/ -p 0xff -o $@ $<
 
 build/%.gbc: $(OBJS)
 	mkdir -p build/
