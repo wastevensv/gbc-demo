@@ -2,5 +2,5 @@
 
 * [x] Display static tiles
 * [x] Button input
-* [ ] Animate tiles
+* [x] Animate tiles
 * [ ] Sound
