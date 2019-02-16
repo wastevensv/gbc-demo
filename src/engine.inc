@@ -12,7 +12,7 @@ ENDM
 
 ; Usage: stall_cyc n
 ; Stall for n cycles.
-stall_cyc : MACRO
+wait_cyc : MACRO
     push af
     ld a, \1
 .stall\@
@@ -21,24 +21,44 @@ stall_cyc : MACRO
     pop af
 ENDM
 
+; Waits for a certain time period.
+; NOTE: Uses 4096 Hz divider clock.
+wait_div: MACRO
+    push af
+    push bc
+    ld a, \2
+    ld c, \1
+    ld hl, rDIV
+.loopDiv\@
+    ld [rDIV], a
+.loopDiv2\@
+    cp [hl]
+    jr nc, .loopDiv2\@
+    dec c
+    jr nz, .loopDiv\@
+    pop bc
+    pop af
+ENDM
+
+
 ; Usage: stall_key b
 ; b is bit number to check
 ; Wait on key press and release.
 ; Only uses Start (b=3), Sel, B, A (b=0)
-stall_key : MACRO
+wait_key : MACRO
     ld a, %00010000
     ld [rP1], a
 ; Stall till A pressed
 .aPress
     ld a, [rP1]
-    stall_cyc 15
+    wait_cyc 20
     bit \1, a
     jp z, .aPress
 
 ; Stall till A released
 .aRelease
     ld a, [rP1]
-    stall_cyc 15
+    wait_cyc 20
     bit \1, a
     jp nz, .aRelease
 ENDM

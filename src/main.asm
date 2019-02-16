@@ -95,7 +95,7 @@ main:
     ld hl, _SCRN0+$21
     ld de, HelloWorldStr
 .copyString
-    stall_key PADB_A
+    wait_key PADB_A
     wait_vblank
 ; Print Character
     ld a, [de]
@@ -105,13 +105,33 @@ main:
     and a              ; Check for null terminator
     jr nz, .copyString ; Continue if a is not 0
 
+    ld a, [rLCDC]
+    set 1, a
+    ld [rLCDC], a
+
     ld a, $10
-    ld [_OAMRAM+0], a
     ld [_OAMRAM+1], a
     ld a, $81
     ld [_OAMRAM+2], a
 
+    
+.moveRestart
+    ld a, $20
+.moveDown
+    ld [_OAMRAM+0], a
+    inc a
+    wait_div $02,$F0
     wait_vblank
+    cp $40
+    jp nz, .moveDown
+.moveUp
+    ld [_OAMRAM+0], a
+    dec a
+    wait_div $02,$F0
+    wait_vblank
+    cp $20
+    jp nz, .moveUp
+    jp z, .moveRestart
 
     halt
 
@@ -142,8 +162,8 @@ BGPalAlt:
        %0111111111111111, %0111110000000000
 
 CoinPal:
-    dw %0111111111111111, %0101111110111110, \
-       %0011011111011111, %0010101011111111
+    dw %0111111111111111, %0001110110101110, \
+       %0011010111001111, %0010100011101111
 
 SECTION "strings", ROMX,BANK[2]
 HelloWorldStr:
